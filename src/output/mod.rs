@@ -31,9 +31,3 @@ pub fn output_json<T: Serialize>(data: &T, jq_expression: Option<&str>) -> Resul
 
     Ok(())
 }
-
-/// Re-export table output functions
-pub use table::{
-    output_blocks_table, output_daily_table, output_monthly_table, output_session_table,
-    output_weekly_table,
-};

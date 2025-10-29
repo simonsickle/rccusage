@@ -1,4 +1,3 @@
-use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
 
 /// Token counts from raw JSONL (snake_case field names)
@@ -15,19 +14,11 @@ pub struct TokenCounts {
 }
 
 impl TokenCounts {
-    pub fn new() -> Self {
-        Self::default()
-    }
-
     pub fn total(&self) -> u64 {
         self.input_tokens
             + self.output_tokens
             + self.cache_creation_input_tokens
             + self.cache_read_input_tokens
-    }
-
-    pub fn is_empty(&self) -> bool {
-        self.total() == 0
     }
 
     pub fn add(&mut self, other: &TokenCounts) {
@@ -52,28 +43,6 @@ pub struct AggregatedTokenCounts {
 }
 
 impl AggregatedTokenCounts {
-    pub fn new() -> Self {
-        Self::default()
-    }
-
-    pub fn total(&self) -> u64 {
-        self.input_tokens
-            + self.output_tokens
-            + self.cache_creation_tokens
-            + self.cache_read_tokens
-    }
-
-    pub fn is_empty(&self) -> bool {
-        self.total() == 0
-    }
-
-    pub fn add(&mut self, other: &AggregatedTokenCounts) {
-        self.input_tokens += other.input_tokens;
-        self.output_tokens += other.output_tokens;
-        self.cache_creation_tokens += other.cache_creation_tokens;
-        self.cache_read_tokens += other.cache_read_tokens;
-    }
-
     pub fn add_from_raw(&mut self, tokens: &TokenCounts) {
         self.input_tokens += tokens.input_tokens;
         self.output_tokens += tokens.output_tokens;

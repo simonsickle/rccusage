@@ -256,28 +256,11 @@ impl PricingFetcher {
     #[cfg(feature = "online-pricing")]
     async fn fetch_online_pricing(
         &self,
-        client: &reqwest::Client,
+        _client: &reqwest::Client,
         model: &ModelName,
     ) -> Result<ModelPricing> {
         // This would fetch from LiteLLM API or similar pricing service
         // For now, we'll just return an error to use offline pricing
         anyhow::bail!("Online pricing not yet implemented for model: {}", model.as_str())
-    }
-
-    /// Get pricing for a model (for display purposes)
-    pub fn get_pricing(&self, model: &ModelName) -> Option<ModelPricing> {
-        self.custom_pricing
-            .get(model.as_str())
-            .cloned()
-            .or_else(|| MODEL_PRICING.get(model.as_str()).cloned())
-    }
-
-    /// List all known models with pricing
-    pub fn list_models(&self) -> Vec<String> {
-        let mut models: Vec<_> = MODEL_PRICING.keys().map(|s| s.to_string()).collect();
-        models.extend(self.custom_pricing.keys().cloned());
-        models.sort();
-        models.dedup();
-        models
     }
 }

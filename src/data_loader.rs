@@ -11,7 +11,6 @@ use std::fs::File;
 use std::io::{BufRead, BufReader};
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
-use tracing::{debug, warn};
 
 /// Default Claude data directories to search
 const DEFAULT_CLAUDE_PATHS: &[&str] = &[
@@ -104,23 +103,12 @@ where
             Ok(line) => {
                 let trimmed = line.trim();
                 if !trimmed.is_empty() {
-                    if let Err(e) = process_line(trimmed, line_number) {
-                        debug!(
-                            "Skipping line {} in {}: {}",
-                            line_number,
-                            file_path.display(),
-                            e
-                        );
-                    }
+                    // Silently skip malformed lines
+                    let _ = process_line(trimmed, line_number);
                 }
             }
-            Err(e) => {
-                debug!(
-                    "Error reading line {} from {}: {}",
-                    line_number,
-                    file_path.display(),
-                    e
-                );
+            Err(_e) => {
+                // Silently skip lines that can't be read
             }
         }
     }
@@ -262,26 +250,4 @@ pub async fn load_usage_entries(
     all_entries.sort_by_key(|e| e.timestamp);
 
     Ok(all_entries)
-}
-
-/// Get the earliest timestamp from all JSONL files
-pub async fn get_earliest_timestamp() -> Result<Option<DateTime<Utc>>> {
-    let files = find_jsonl_files().await?;
-    let mut earliest: Option<DateTime<Utc>> = None;
-
-    for file_path in files {
-        stream_jsonl_file(&file_path, |line, _| {
-            if let Ok(data) = serde_json::from_str::<UsageData>(line) {
-                if let Ok(timestamp) = DateTime::parse_from_rfc3339(&data.timestamp) {
-                    let timestamp = timestamp.with_timezone(&Utc);
-                    if earliest.is_none() || Some(timestamp) < earliest {
-                        earliest = Some(timestamp);
-                    }
-                }
-            }
-            Ok(())
-        })?;
-    }
-
-    Ok(earliest)
 }

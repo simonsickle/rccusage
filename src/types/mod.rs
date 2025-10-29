@@ -38,10 +38,6 @@ impl SessionId {
     pub fn new(id: impl Into<String>) -> Self {
         Self(id.into())
     }
-
-    pub fn as_str(&self) -> &str {
-        &self.0
-    }
 }
 
 /// Branded type for request IDs
@@ -72,10 +68,6 @@ impl ProjectPath {
     pub fn new(path: impl Into<PathBuf>) -> Self {
         Self(path.into())
     }
-
-    pub fn as_path(&self) -> &PathBuf {
-        &self.0
-    }
 }
 
 impl std::fmt::Display for ProjectPath {
@@ -89,10 +81,6 @@ impl std::fmt::Display for ProjectPath {
 pub struct DailyDate(pub NaiveDate);
 
 impl DailyDate {
-    pub fn new(date: NaiveDate) -> Self {
-        Self(date)
-    }
-
     pub fn from_datetime(dt: DateTime<Utc>) -> Self {
         Self(dt.date_naive())
     }
@@ -112,10 +100,6 @@ pub struct MonthlyDate {
 }
 
 impl MonthlyDate {
-    pub fn new(year: i32, month: u32) -> Self {
-        Self { year, month }
-    }
-
     pub fn from_datetime(dt: DateTime<Utc>) -> Self {
         Self {
             year: dt.year(),
@@ -187,7 +171,6 @@ pub struct CommonOptions {
     pub since: Option<NaiveDate>,
     pub until: Option<NaiveDate>,
     pub order: SortOrder,
-    pub timezone: Option<String>,
     pub offline: bool,
     pub project: Option<String>,
     pub jq: Option<String>,

@@ -4,7 +4,6 @@ use crate::data_loader::load_usage_entries;
 use crate::output::output_json;
 use crate::pricing::PricingFetcher;
 use anyhow::Result;
-use chrono::Utc;
 use rust_decimal::prelude::*;
 use serde_json::json;
 use tracing::info;

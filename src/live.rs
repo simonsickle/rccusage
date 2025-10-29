@@ -84,13 +84,3 @@ impl LiveMonitor {
         Ok(())
     }
 }
-
-/// Add --watch flag to enable live monitoring
-#[derive(Debug, Clone)]
-pub struct WatchArgs {
-    /// Enable live monitoring mode
-    pub watch: bool,
-
-    /// Update interval in seconds (default: 5)
-    pub interval: u64,
-}

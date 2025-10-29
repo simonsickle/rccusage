@@ -93,7 +93,6 @@ impl CommonArgs {
             since: self.since,
             until: self.until,
             order: self.order,
-            timezone: self.timezone.clone(),
             offline: self.offline,
             project: self.project.clone(),
             jq: self.jq.clone(),

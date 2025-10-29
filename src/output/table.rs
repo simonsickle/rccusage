@@ -434,30 +434,3 @@ pub fn output_blocks_table(data: &[SessionBlock], token_limit: Option<u64>, forc
     println!("{}", table);
     Ok(())
 }
-
-/// Output statusline in compact format
-pub fn output_statusline(data: &StatuslineData) -> Result<()> {
-    // Ultra-compact one-line status
-    let status = format!(
-        "{}  {} {}  {} {}  {}",
-        format!("▶ {}", data.active_block_id).cyan(),
-        format_tokens_compact(data.block_tokens).yellow(),
-        format!("({}%)", data.block_usage_pct).dimmed(),
-        format_cost(data.block_cost).green(),
-        format!("◆ {}", format_tokens_compact(data.day_tokens)).white(),
-        format_cost(data.day_cost).green(),
-    );
-
-    println!("{}", status);
-    Ok(())
-}
-
-// StatuslineData struct for the statusline command
-pub struct StatuslineData {
-    pub active_block_id: String,
-    pub block_tokens: u64,
-    pub block_usage_pct: u32,
-    pub block_cost: Decimal,
-    pub day_tokens: u64,
-    pub day_cost: Decimal,
-}

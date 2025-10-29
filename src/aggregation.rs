@@ -1,10 +1,9 @@
 use crate::types::*;
-use chrono::{DateTime, Duration, NaiveDate, Utc};
+use chrono::{DateTime, Duration, Utc};
 use indexmap::IndexMap;
 use itertools::Itertools;
 use rust_decimal::prelude::*;
 use std::collections::{HashMap, HashSet};
-use tracing::debug;
 
 /// Aggregate usage entries by day
 pub fn aggregate_daily(
@@ -185,7 +184,6 @@ pub fn identify_session_blocks(
                         actual_end_time: None,
                         is_active: false,
                         is_gap: Some(true),
-                        entries: Vec::new(),
                         token_counts: TokenCounts::default(),
                         cost_usd: Decimal::ZERO,
                         models: Vec::new(),
@@ -267,7 +265,6 @@ fn create_session_block(
         actual_end_time,
         is_active,
         is_gap: Some(false),
-        entries,
         token_counts,
         cost_usd: total_cost,
         models: models.into_iter().sorted().collect(),

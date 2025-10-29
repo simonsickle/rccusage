@@ -92,34 +92,4 @@ impl Config {
 
         Ok(config)
     }
-
-    /// Merge config with command-line arguments (CLI args take precedence)
-    pub fn merge_with_cli(&self, cli_options: &mut crate::types::CommonOptions) {
-        // Only apply config values if CLI didn't specify them
-        if cli_options.mode == CostMode::Auto {
-            if let Some(mode) = self.mode {
-                cli_options.mode = mode;
-            }
-        }
-
-        if cli_options.order == SortOrder::Asc {
-            if let Some(order) = self.order {
-                cli_options.order = order;
-            }
-        }
-
-        if cli_options.timezone.is_none() {
-            cli_options.timezone = self.timezone.clone();
-        }
-
-        if !cli_options.offline {
-            if let Some(offline) = self.offline {
-                cli_options.offline = offline;
-            }
-        }
-
-        if cli_options.project.is_none() {
-            cli_options.project = self.project.clone();
-        }
-    }
 }

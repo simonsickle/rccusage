@@ -1,8 +1,8 @@
 use super::{
-    DailyDate, MessageId, ModelName, MonthlyDate, ProjectPath,
+    DailyDate, MessageId, ModelName, MonthlyDate,
     RequestId, SessionId, TokenCounts, WeeklyDate,
 };
-use chrono::{DateTime, NaiveDate, Utc};
+use chrono::{DateTime, Utc};
 use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
 
@@ -97,12 +97,6 @@ pub struct ModelBreakdown {
     pub cache_read_tokens: u64,
 
     pub cost: Decimal,
-}
-
-impl ModelBreakdown {
-    pub fn total_tokens(&self) -> u64 {
-        self.input_tokens + self.output_tokens + self.cache_creation_tokens + self.cache_read_tokens
-    }
 }
 
 /// Daily usage aggregation
@@ -205,10 +199,4 @@ pub struct WeeklyUsage {
 
     #[serde(skip_serializing_if = "Option::is_none")]
     pub project: Option<String>,
-}
-
-impl WeeklyUsage {
-    pub fn total_tokens(&self) -> u64 {
-        self.input_tokens + self.output_tokens + self.cache_creation_tokens + self.cache_read_tokens
-    }
 }
