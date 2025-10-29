@@ -1,4 +1,9 @@
-# ccusage-rs 🦀
+# rccusage 🦀
+
+[![CI](https://github.com/simonsickle/rccusage/actions/workflows/ci.yml/badge.svg)](https://github.com/simonsickle/rccusage/actions/workflows/ci.yml)
+[![Build](https://github.com/simonsickle/rccusage/actions/workflows/build.yml/badge.svg)](https://github.com/simonsickle/rccusage/actions/workflows/build.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Crates.io](https://img.shields.io/crates/v/rccusage.svg)](https://crates.io/crates/rccusage)
 
 A blazing-fast Rust implementation of [ccusage](https://github.com/ryoppippi/ccusage) - a comprehensive usage analysis tool for Claude Code (formerly Claude Desktop).
 
@@ -32,25 +37,64 @@ A blazing-fast Rust implementation of [ccusage](https://github.com/ryoppippi/ccu
 
 ## 📦 Installation
 
-### From Source (Recommended)
+### Pre-built Binaries (Easiest)
+
+Download the latest release for your platform from the [releases page](https://github.com/simonsickle/rccusage/releases).
+
+#### macOS
+```bash
+# Intel Mac
+curl -L https://github.com/simonsickle/rccusage/releases/latest/download/rccusage-darwin-x64.tar.gz | tar xz
+chmod +x rccusage
+sudo mv rccusage /usr/local/bin/
+
+# Apple Silicon Mac (M1/M2/M3)
+curl -L https://github.com/simonsickle/rccusage/releases/latest/download/rccusage-darwin-arm64.tar.gz | tar xz
+chmod +x rccusage
+sudo mv rccusage /usr/local/bin/
+```
+
+#### Linux
+```bash
+# x64
+curl -L https://github.com/simonsickle/rccusage/releases/latest/download/rccusage-linux-x64.tar.gz | tar xz
+chmod +x rccusage
+sudo mv rccusage /usr/local/bin/
+
+# ARM64
+curl -L https://github.com/simonsickle/rccusage/releases/latest/download/rccusage-linux-arm64.tar.gz | tar xz
+chmod +x rccusage
+sudo mv rccusage /usr/local/bin/
+```
+
+#### Windows
+Download `rccusage-windows-x64.zip` from the [releases page](https://github.com/simonsickle/rccusage/releases), extract it, and add the directory containing `rccusage.exe` to your PATH.
+
+### From Cargo (Rust Package Manager)
+
+```bash
+cargo install rccusage
+```
+
+### From Source
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/ccusage-rust.git
-cd ccusage-rust/rust-ccusage
+git clone https://github.com/simonsickle/rccusage.git
+cd rccusage
 
 # Build and install
 cargo build --release
 cargo install --path .
 
-# Or just build and use the binary directly
-cargo build --release
-./target/release/ccusage --help
+# Or just use the binary directly
+./target/release/rccusage --help
 ```
 
 ### Prerequisites
-- Rust 1.70 or higher
-- Cargo (comes with Rust)
+- For pre-built binaries: None!
+- For cargo install: Rust 1.70+ and Cargo
+- For building from source: Rust 1.70+ and Cargo
 
 ## 🎯 Usage
 
@@ -58,78 +102,78 @@ cargo build --release
 
 ```bash
 # Show daily usage
-ccusage daily
+rccusage daily
 
 # Show monthly summary
-ccusage monthly
+rccusage monthly
 
 # Show weekly breakdown
-ccusage weekly
+rccusage weekly
 
 # Show session-based usage
-ccusage session
+rccusage session
 
 # Show 5-hour billing blocks
-ccusage blocks
+rccusage blocks
 
 # Show compact status line (for shell prompts)
-ccusage statusline
+rccusage statusline
 ```
 
 ### Filtering Options
 
 ```bash
 # Show all historical data
-ccusage daily --all-time
+rccusage daily --all-time
 
 # Filter by date range
-ccusage daily --since 20251001 --until 20251031
+rccusage daily --since 20251001 --until 20251031
 
 # Filter by project
-ccusage daily --project my-project
+rccusage daily --project my-project
 
 # Show only recent sessions (last 7 days)
-ccusage session --recent-days 7
+rccusage session --recent-days 7
 
 # Show only active billing block
-ccusage blocks --active
+rccusage blocks --active
 
 # Show blocks from last 3 days
-ccusage blocks --recent
+rccusage blocks --recent
 ```
 
 ### Output Options
 
 ```bash
 # JSON output
-ccusage daily --json
+rccusage daily --json
 
 # JSON with jq filtering
-ccusage daily --json --jq ".[:5]"  # First 5 days
+rccusage daily --json --jq ".[:5]"  # First 5 days
 
 # Force compact mode (narrow display)
-ccusage daily --compact
+rccusage daily --compact
 
 # Control cost calculation mode
-ccusage daily --mode calculate  # Always calculate from tokens
-ccusage daily --mode display    # Use pre-calculated costs only
-ccusage daily --mode auto       # Default: Use pre-calculated when available
+rccusage daily --mode calculate  # Always calculate from tokens
+rccusage daily --mode display    # Use pre-calculated costs only
+rccusage daily --mode auto       # Default: Use pre-calculated when available
 
 # Silent mode (no logs)
-LOG_LEVEL=0 ccusage daily
+LOG_LEVEL=0 rccusage daily
 
 # With custom timezone
-TZ=America/New_York ccusage daily
+TZ=America/New_York rccusage daily
 ```
 
 ### Live Monitoring
 
 ```bash
 # Watch for changes and auto-refresh
-ccusage daily --watch
+rccusage daily --watch
 
 # Monitor with by-project breakdown
-ccusage daily --by-project --watch
+rccusage daily --by-project --watch
 ```
 
 ## 📊 Output Examples

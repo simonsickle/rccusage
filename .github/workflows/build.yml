@@ -1,0 +1,233 @@
+name: Build and Release
+
+on:
+  push:
+    branches: [ main, master ]
+    tags:
+      - 'v*'
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build:
+    name: Build - ${{ matrix.platform.name }}
+    runs-on: ${{ matrix.platform.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        platform:
+          # macOS Intel
+          - name: macOS-x64
+            os: macos-12
+            target: x86_64-apple-darwin
+            binary_name: rccusage
+            artifact_name: rccusage-darwin-x64
+
+          # macOS Apple Silicon
+          - name: macOS-arm64
+            os: macos-12
+            target: aarch64-apple-darwin
+            binary_name: rccusage
+            artifact_name: rccusage-darwin-arm64
+
+          # Linux x64 (GNU)
+          - name: Linux-x64-gnu
+            os: ubuntu-20.04
+            target: x86_64-unknown-linux-gnu
+            binary_name: rccusage
+            artifact_name: rccusage-linux-x64
+
+          # Linux ARM64
+          - name: Linux-arm64
+            os: ubuntu-20.04
+            target: aarch64-unknown-linux-gnu
+            binary_name: rccusage
+            artifact_name: rccusage-linux-arm64
+
+          # Windows x64
+          - name: Windows-x64
+            os: windows-latest
+            target: x86_64-pc-windows-msvc
+            binary_name: rccusage.exe
+            artifact_name: rccusage-windows-x64.exe
+
+          # Windows ARM64
+          - name: Windows-arm64
+            os: windows-latest
+            target: aarch64-pc-windows-msvc
+            binary_name: rccusage.exe
+            artifact_name: rccusage-windows-arm64.exe
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.platform.target }}
+
+      - name: Cache cargo registry
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+          key: ${{ matrix.platform.name }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Cache cargo build
+        uses: actions/cache@v3
+        with:
+          path: target
+          key: ${{ matrix.platform.name }}-cargo-build-${{ hashFiles('**/Cargo.lock') }}
+
+      # Install cross-compilation tools for ARM64 Linux
+      - name: Install ARM64 Linux tools
+        if: matrix.platform.target == 'aarch64-unknown-linux-gnu'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gcc-aarch64-linux-gnu
+
+      - name: Build binary
+        run: cargo build --release --target ${{ matrix.platform.target }}
+
+      - name: Package binary (Unix)
+        if: runner.os != 'Windows'
+        run: |
+          cd target/${{ matrix.platform.target }}/release
+          tar czf ../../../${{ matrix.platform.artifact_name }}.tar.gz ${{ matrix.platform.binary_name }}
+          cd ../../../
+          shasum -a 256 ${{ matrix.platform.artifact_name }}.tar.gz > ${{ matrix.platform.artifact_name }}.tar.gz.sha256
+
+      - name: Package binary (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          cd target\${{ matrix.platform.target }}\release
+          7z a ..\..\..\${{ matrix.platform.artifact_name }}.zip ${{ matrix.platform.binary_name }}
+          cd ..\..\..\
+          Get-FileHash ${{ matrix.platform.artifact_name }}.zip -Algorithm SHA256 | Select-Object -ExpandProperty Hash > ${{ matrix.platform.artifact_name }}.zip.sha256
+
+      - name: Upload artifacts (Unix)
+        if: runner.os != 'Windows'
+        uses: actions/upload-artifact@v3
+        with:
+          name: ${{ matrix.platform.artifact_name }}
+          path: |
+            ${{ matrix.platform.artifact_name }}.tar.gz
+            ${{ matrix.platform.artifact_name }}.tar.gz.sha256
+          retention-days: 30
+
+      - name: Upload artifacts (Windows)
+        if: runner.os == 'Windows'
+        uses: actions/upload-artifact@v3
+        with:
+          name: ${{ matrix.platform.artifact_name }}
+          path: |
+            ${{ matrix.platform.artifact_name }}.zip
+            ${{ matrix.platform.artifact_name }}.zip.sha256
+          retention-days: 30
+
+      # Also upload raw binary for convenience
+      - name: Upload raw binary
+        uses: actions/upload-artifact@v3
+        with:
+          name: ${{ matrix.platform.artifact_name }}-raw
+          path: target/${{ matrix.platform.target }}/release/${{ matrix.platform.binary_name }}
+          retention-days: 30
+
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Run tests
+        run: cargo test --verbose
+
+      - name: Run clippy
+        run: cargo clippy -- -D warnings
+
+      - name: Check formatting
+        run: cargo fmt -- --check
+
+  release:
+    name: Create Release
+    needs: [build, test]
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v')
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v3
+        with:
+          path: ./artifacts
+
+      - name: Display structure of downloaded files
+        run: ls -R ./artifacts
+
+      - name: Prepare release assets
+        run: |
+          mkdir -p ./release
+          # Copy all tar.gz and zip files
+          find ./artifacts -name "*.tar.gz" -exec cp {} ./release/ \;
+          find ./artifacts -name "*.zip" -exec cp {} ./release/ \;
+          find ./artifacts -name "*.sha256" -exec cp {} ./release/ \;
+          ls -la ./release/
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: ./release/*
+          draft: false
+          prerelease: false
+          generate_release_notes: true
+          body: |
+            ## Installation
+
+            ### macOS
+            ```bash
+            # Intel Mac
+            curl -L https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/rccusage-darwin-x64.tar.gz | tar xz
+            chmod +x rccusage
+            sudo mv rccusage /usr/local/bin/
+
+            # Apple Silicon Mac
+            curl -L https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/rccusage-darwin-arm64.tar.gz | tar xz
+            chmod +x rccusage
+            sudo mv rccusage /usr/local/bin/
+            ```
+
+            ### Linux
+            ```bash
+            # x64
+            curl -L https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/rccusage-linux-x64.tar.gz | tar xz
+            chmod +x rccusage
+            sudo mv rccusage /usr/local/bin/
+
+            # ARM64
+            curl -L https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/rccusage-linux-arm64.tar.gz | tar xz
+            chmod +x rccusage
+            sudo mv rccusage /usr/local/bin/
+            ```
+
+            ### Windows
+            Download the appropriate `.zip` file and extract `rccusage.exe` to a directory in your PATH.
+
+            ## Checksums
+            SHA256 checksums are provided for all binaries.
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

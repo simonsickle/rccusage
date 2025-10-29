@@ -216,45 +216,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "ccusage"
-version = "0.1.0"
-dependencies = [
- "ahash 0.8.12",
- "anyhow",
- "chrono",
- "chrono-tz",
- "clap",
- "colored",
- "comfy-table",
- "dashmap",
- "dirs",
- "env_logger",
- "futures",
- "glob",
- "indexmap",
- "indicatif",
- "itertools",
- "lazy_static",
- "log",
- "notify",
- "rayon",
- "regex",
- "reqwest",
- "rust_decimal",
- "rust_decimal_macros",
- "serde",
- "serde_json",
- "subprocess",
- "terminal_size",
- "thiserror 2.0.17",
- "tokio",
- "tracing",
- "tracing-subscriber",
- "unicode-width 0.1.14",
- "walkdir",
-]
-
-[[package]]
 name = "cfg-if"
 version = "1.0.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1600,6 +1561,45 @@ checksum = "22e18b0f0062d30d4230b2e85ff77fdfe4326feb054b9783a3460d8435c8ab91"
 dependencies = [
  "crossbeam-deque",
  "crossbeam-utils",
+]
+
+[[package]]
+name = "rccusage"
+version = "0.1.0"
+dependencies = [
+ "ahash 0.8.12",
+ "anyhow",
+ "chrono",
+ "chrono-tz",
+ "clap",
+ "colored",
+ "comfy-table",
+ "dashmap",
+ "dirs",
+ "env_logger",
+ "futures",
+ "glob",
+ "indexmap",
+ "indicatif",
+ "itertools",
+ "lazy_static",
+ "log",
+ "notify",
+ "rayon",
+ "regex",
+ "reqwest",
+ "rust_decimal",
+ "rust_decimal_macros",
+ "serde",
+ "serde_json",
+ "subprocess",
+ "terminal_size",
+ "thiserror 2.0.17",
+ "tokio",
+ "tracing",
+ "tracing-subscriber",
+ "unicode-width 0.1.14",
+ "walkdir",
 ]
 
 [[package]]

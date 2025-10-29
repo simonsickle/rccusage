@@ -1,13 +1,22 @@
 [package]
-name = "ccusage"
+name = "rccusage"
 version = "0.1.0"
 edition = "2021"
-authors = ["ccusage contributors"]
-description = "Fast usage analysis tool for Claude Code"
+authors = ["rccusage contributors"]
+description = "Fast Rust implementation of ccusage - Claude Code usage analyzer"
 license = "MIT"
-repository = "https://github.com/ryoppippi/ccusage"
-keywords = ["claude", "cli", "usage", "analytics"]
-categories = ["command-line-utilities"]
+repository = "https://github.com/simonsickle/rccusage"
+homepage = "https://github.com/simonsickle/rccusage"
+documentation = "https://docs.rs/rccusage"
+readme = "README.md"
+keywords = ["claude", "cli", "usage", "analytics", "anthropic"]
+categories = ["command-line-utilities", "development-tools"]
+exclude = [
+    ".github/*",
+    ".gitignore",
+    "scripts/*",
+    "test-data/*",
+]
 
 [dependencies]
 # Core dependencies
@@ -76,5 +85,5 @@ codegen-units = 1
 strip = true
 
 [[bin]]
-name = "ccusage"
+name = "rccusage"
 path = "src/main.rs"
