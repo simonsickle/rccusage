@@ -12,7 +12,7 @@ pub fn aggregate_daily(entries: Vec<LoadedUsageEntry>, order: SortOrder) -> Vec<
     // Group entries by date
     for entry in entries {
         let date = DailyDate::from_datetime(entry.timestamp);
-        daily_map.entry(date).or_insert_with(Vec::new).push(entry);
+        daily_map.entry(date).or_default().push(entry);
     }
 
     // Convert to DailyUsage structs
@@ -37,7 +37,7 @@ pub fn aggregate_monthly(entries: Vec<LoadedUsageEntry>, order: SortOrder) -> Ve
     // Group entries by month
     for entry in entries {
         let date = MonthlyDate::from_datetime(entry.timestamp);
-        monthly_map.entry(date).or_insert_with(Vec::new).push(entry);
+        monthly_map.entry(date).or_default().push(entry);
     }
 
     // Convert to MonthlyUsage structs
@@ -62,7 +62,7 @@ pub fn aggregate_weekly(entries: Vec<LoadedUsageEntry>, order: SortOrder) -> Vec
     // Group entries by week
     for entry in entries {
         let date = WeeklyDate::from_datetime(entry.timestamp);
-        weekly_map.entry(date).or_insert_with(Vec::new).push(entry);
+        weekly_map.entry(date).or_default().push(entry);
     }
 
     // Convert to WeeklyUsage structs
@@ -95,7 +95,7 @@ pub fn aggregate_sessions(entries: Vec<LoadedUsageEntry>, order: SortOrder) -> V
                     .unwrap_or_else(|| "unknown".to_string()),
             );
             let key = (session_id, project_path);
-            session_map.entry(key).or_insert_with(Vec::new).push(entry);
+            session_map.entry(key).or_default().push(entry);
         }
     }
 

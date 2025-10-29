@@ -2,7 +2,6 @@ pub mod table;
 
 use anyhow::{Context, Result};
 use serde::Serialize;
-use serde_json;
 use std::process::{Command, Stdio};
 
 /// Output data as JSON, optionally filtered through jq

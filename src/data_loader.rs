@@ -6,7 +6,6 @@ use chrono::{DateTime, Utc};
 use dashmap::DashSet;
 use glob::glob;
 use rust_decimal::prelude::*;
-use serde_json;
 use std::fs::File;
 use std::io::{BufRead, BufReader};
 use std::path::{Path, PathBuf};
@@ -55,10 +54,8 @@ pub async fn find_jsonl_files() -> Result<Vec<PathBuf>> {
 
     for dir in dirs {
         let pattern = format!("{}/**/*.jsonl", dir.display());
-        for entry in glob(&pattern).context("Failed to read glob pattern")? {
-            if let Ok(path) = entry {
-                all_files.push(path);
-            }
+        for path in glob(&pattern).context("Failed to read glob pattern")?.flatten() {
+            all_files.push(path);
         }
     }
 
@@ -139,24 +136,24 @@ pub async fn parse_usage_entry(
     let cost = match cost_mode {
         CostMode::Display => {
             // Always use pre-calculated cost, default to 0
-            Decimal::from_f64(data.cost_usd.unwrap_or(0.0)).unwrap_or_else(|| Decimal::ZERO)
+            Decimal::from_f64(data.cost_usd.unwrap_or(0.0)).unwrap_or(Decimal::ZERO)
         }
         CostMode::Calculate => {
             // Always calculate from tokens
             pricing_fetcher
                 .calculate_cost(&model, &data.message.usage)
                 .await
-                .unwrap_or_else(|_| Decimal::ZERO)
+                .unwrap_or(Decimal::ZERO)
         }
         CostMode::Auto => {
             // Use pre-calculated if available, otherwise calculate
             if let Some(cost_usd) = data.cost_usd {
-                Decimal::from_f64(cost_usd).unwrap_or_else(|| Decimal::ZERO)
+                Decimal::from_f64(cost_usd).unwrap_or(Decimal::ZERO)
             } else {
                 pricing_fetcher
                     .calculate_cost(&model, &data.message.usage)
                     .await
-                    .unwrap_or_else(|_| Decimal::ZERO)
+                    .unwrap_or(Decimal::ZERO)
             }
         }
     };
