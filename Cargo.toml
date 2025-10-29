@@ -30,12 +30,12 @@ chrono-tz = "0.10"
 # CLI and formatting
 clap = { version = "4.5", features = ["derive", "env", "string"] }
 comfy-table = "7.1"
-colored = "2.1"
-indicatif = "0.17"
+colored = "3.0"
+indicatif = "0.18"
 
 # File and path handling
 glob = "0.3"
-dirs = "5.0"
+dirs = "6.0"
 walkdir = "2.5"
 
 # Async runtime
@@ -46,7 +46,7 @@ futures = "0.3"
 regex = "1.11"
 lazy_static = "1.5"
 indexmap = { version = "2.7", features = ["serde"] }
-itertools = "0.13"
+itertools = "0.14"
 rust_decimal = "1.36"
 rust_decimal_macros = "1.36"
 
@@ -60,14 +60,14 @@ env_logger = "0.11"
 reqwest = { version = "0.12", features = ["json"], optional = true }
 
 # File watching for live monitoring
-notify = "6.1"
+notify = "8.2"
 
 # Process execution for jq filtering
 subprocess = "0.2"
 
 # Terminal utilities
 terminal_size = "0.4"
-unicode-width = "0.1"
+unicode-width = "0.2"
 
 # Performance
 rayon = "1.10"
