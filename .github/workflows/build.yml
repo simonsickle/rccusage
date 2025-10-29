@@ -72,7 +72,7 @@ jobs:
           targets: ${{ matrix.platform.target }}
 
       - name: Cache cargo registry
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: |
             ~/.cargo/registry
@@ -80,7 +80,7 @@ jobs:
           key: ${{ matrix.platform.name }}-cargo-${{ hashFiles('**/Cargo.lock') }}
 
       - name: Cache cargo build
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: target
           key: ${{ matrix.platform.name }}-cargo-build-${{ hashFiles('**/Cargo.lock') }}
