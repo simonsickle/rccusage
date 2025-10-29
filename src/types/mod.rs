@@ -2,13 +2,13 @@ use chrono::{DateTime, Datelike, NaiveDate, Utc};
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 
+pub mod session;
 pub mod tokens;
 pub mod usage;
-pub mod session;
 
+pub use session::*;
 pub use tokens::*;
 pub use usage::*;
-pub use session::*;
 
 /// Branded type for model names
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]

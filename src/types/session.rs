@@ -73,7 +73,10 @@ pub struct SessionBlock {
 
     pub models: Vec<String>,
 
-    #[serde(rename = "usageLimitResetTime", skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "usageLimitResetTime",
+        skip_serializing_if = "Option::is_none"
+    )]
     pub usage_limit_reset_time: Option<DateTime<Utc>>,
 }
 

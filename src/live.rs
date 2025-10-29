@@ -1,9 +1,9 @@
+use crate::data_loader::get_claude_data_dirs;
 use anyhow::{Context, Result};
 use notify::{Event, EventKind, RecursiveMode, Watcher};
 use std::path::PathBuf;
 use std::sync::mpsc;
 use std::time::Duration;
-use crate::data_loader::get_claude_data_dirs;
 
 /// Live monitoring mode for watching file changes
 pub struct LiveMonitor {

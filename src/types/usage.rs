@@ -1,6 +1,5 @@
 use super::{
-    DailyDate, MessageId, ModelName, MonthlyDate,
-    RequestId, SessionId, TokenCounts, WeeklyDate,
+    DailyDate, MessageId, ModelName, MonthlyDate, RequestId, SessionId, TokenCounts, WeeklyDate,
 };
 use chrono::{DateTime, Utc};
 use rust_decimal::Decimal;

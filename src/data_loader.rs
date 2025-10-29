@@ -15,7 +15,7 @@ use std::sync::Arc;
 /// Default Claude data directories to search
 const DEFAULT_CLAUDE_PATHS: &[&str] = &[
     "~/.config/claude/projects", // New default location
-    "~/.claude/projects",         // Old default location
+    "~/.claude/projects",        // Old default location
 ];
 
 /// Get all Claude data directories to search
@@ -69,9 +69,7 @@ pub async fn find_jsonl_files() -> Result<Vec<PathBuf>> {
 pub fn extract_project_name(file_path: &Path) -> String {
     // Path structure: .../projects/{project}/{sessionId}.jsonl
     let components: Vec<_> = file_path.components().collect();
-    let projects_idx = components
-        .iter()
-        .rposition(|c| c.as_os_str() == "projects");
+    let projects_idx = components.iter().rposition(|c| c.as_os_str() == "projects");
 
     if let Some(idx) = projects_idx {
         if idx + 1 < components.len() {

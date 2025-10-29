@@ -6,10 +6,7 @@ use rust_decimal::prelude::*;
 use std::collections::{HashMap, HashSet};
 
 /// Aggregate usage entries by day
-pub fn aggregate_daily(
-    entries: Vec<LoadedUsageEntry>,
-    order: SortOrder,
-) -> Vec<DailyUsage> {
+pub fn aggregate_daily(entries: Vec<LoadedUsageEntry>, order: SortOrder) -> Vec<DailyUsage> {
     let mut daily_map: IndexMap<DailyDate, Vec<LoadedUsageEntry>> = IndexMap::new();
 
     // Group entries by date
@@ -34,10 +31,7 @@ pub fn aggregate_daily(
 }
 
 /// Aggregate usage entries by month
-pub fn aggregate_monthly(
-    entries: Vec<LoadedUsageEntry>,
-    order: SortOrder,
-) -> Vec<MonthlyUsage> {
+pub fn aggregate_monthly(entries: Vec<LoadedUsageEntry>, order: SortOrder) -> Vec<MonthlyUsage> {
     let mut monthly_map: IndexMap<MonthlyDate, Vec<LoadedUsageEntry>> = IndexMap::new();
 
     // Group entries by month
@@ -62,10 +56,7 @@ pub fn aggregate_monthly(
 }
 
 /// Aggregate usage entries by week
-pub fn aggregate_weekly(
-    entries: Vec<LoadedUsageEntry>,
-    order: SortOrder,
-) -> Vec<WeeklyUsage> {
+pub fn aggregate_weekly(entries: Vec<LoadedUsageEntry>, order: SortOrder) -> Vec<WeeklyUsage> {
     let mut weekly_map: IndexMap<WeeklyDate, Vec<LoadedUsageEntry>> = IndexMap::new();
 
     // Group entries by week
@@ -90,11 +81,9 @@ pub fn aggregate_weekly(
 }
 
 /// Aggregate usage entries by session
-pub fn aggregate_sessions(
-    entries: Vec<LoadedUsageEntry>,
-    order: SortOrder,
-) -> Vec<SessionUsage> {
-    let mut session_map: IndexMap<(SessionId, ProjectPath), Vec<LoadedUsageEntry>> = IndexMap::new();
+pub fn aggregate_sessions(entries: Vec<LoadedUsageEntry>, order: SortOrder) -> Vec<SessionUsage> {
+    let mut session_map: IndexMap<(SessionId, ProjectPath), Vec<LoadedUsageEntry>> =
+        IndexMap::new();
 
     // Group entries by session and project
     for entry in entries {
@@ -148,8 +137,9 @@ pub fn identify_session_blocks(
 
     for entry in entries {
         // Floor timestamp to hour
-        use chrono::{Timelike};
-        let entry_hour = entry.timestamp
+        use chrono::Timelike;
+        let entry_hour = entry
+            .timestamp
             .with_minute(0)
             .unwrap()
             .with_second(0)
@@ -363,7 +353,12 @@ fn aggregate_entries_to_session(
 /// Helper to aggregate tokens and costs from entries
 fn aggregate_tokens_and_cost(
     entries: Vec<LoadedUsageEntry>,
-) -> (AggregatedTokenCounts, Decimal, Vec<ModelName>, Vec<ModelBreakdown>) {
+) -> (
+    AggregatedTokenCounts,
+    Decimal,
+    Vec<ModelName>,
+    Vec<ModelBreakdown>,
+) {
     let mut total_tokens = AggregatedTokenCounts::default();
     let mut total_cost = Decimal::ZERO;
     let mut model_map: HashMap<ModelName, (AggregatedTokenCounts, Decimal)> = HashMap::new();

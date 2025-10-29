@@ -10,10 +10,10 @@ use tracing::{debug, warn};
 /// Model pricing information
 #[derive(Debug, Clone)]
 pub struct ModelPricing {
-    pub input_price: Decimal,         // Price per 1M input tokens
-    pub output_price: Decimal,        // Price per 1M output tokens
+    pub input_price: Decimal,          // Price per 1M input tokens
+    pub output_price: Decimal,         // Price per 1M output tokens
     pub cache_creation_price: Decimal, // Price per 1M cache creation tokens
-    pub cache_read_price: Decimal,    // Price per 1M cache read tokens
+    pub cache_read_price: Decimal,     // Price per 1M cache read tokens
 }
 
 impl ModelPricing {
@@ -22,8 +22,8 @@ impl ModelPricing {
 
         let input_cost = (Decimal::from(tokens.input_tokens) / million) * self.input_price;
         let output_cost = (Decimal::from(tokens.output_tokens) / million) * self.output_price;
-        let cache_creation_cost =
-            (Decimal::from(tokens.cache_creation_input_tokens) / million) * self.cache_creation_price;
+        let cache_creation_cost = (Decimal::from(tokens.cache_creation_input_tokens) / million)
+            * self.cache_creation_price;
         let cache_read_cost =
             (Decimal::from(tokens.cache_read_input_tokens) / million) * self.cache_read_price;
 
@@ -209,11 +209,7 @@ impl PricingFetcher {
     }
 
     /// Calculate cost for a given model and token counts
-    pub async fn calculate_cost(
-        &self,
-        model: &ModelName,
-        tokens: &TokenCounts,
-    ) -> Result<Decimal> {
+    pub async fn calculate_cost(&self, model: &ModelName, tokens: &TokenCounts) -> Result<Decimal> {
         // Check custom pricing first
         if let Some(pricing) = self.custom_pricing.get(model.as_str()) {
             return Ok(pricing.calculate_cost(tokens));
@@ -261,6 +257,9 @@ impl PricingFetcher {
     ) -> Result<ModelPricing> {
         // This would fetch from LiteLLM API or similar pricing service
         // For now, we'll just return an error to use offline pricing
-        anyhow::bail!("Online pricing not yet implemented for model: {}", model.as_str())
+        anyhow::bail!(
+            "Online pricing not yet implemented for model: {}",
+            model.as_str()
+        )
     }
 }

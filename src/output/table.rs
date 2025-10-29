@@ -1,7 +1,10 @@
 use crate::types::*;
 use anyhow::Result;
 use colored::*;
-use comfy_table::{modifiers::UTF8_ROUND_CORNERS, presets::UTF8_FULL, presets::UTF8_BORDERS_ONLY, Cell, Color, ContentArrangement, Table};
+use comfy_table::{
+    modifiers::UTF8_ROUND_CORNERS, presets::UTF8_BORDERS_ONLY, presets::UTF8_FULL, Cell, Color,
+    ContentArrangement, Table,
+};
 use rust_decimal::prelude::*;
 use terminal_size::{terminal_size, Width};
 
@@ -72,7 +75,8 @@ pub fn output_daily_table(data: &[DailyUsage], force_compact: bool) -> Result<()
     if compact_mode {
         table.load_preset(UTF8_BORDERS_ONLY);
     } else {
-        table.load_preset(UTF8_FULL)
+        table
+            .load_preset(UTF8_FULL)
             .apply_modifier(UTF8_ROUND_CORNERS);
     }
 
@@ -125,7 +129,8 @@ pub fn output_daily_table(data: &[DailyUsage], force_compact: bool) -> Result<()
 
         if compact_mode {
             // Ultra-compact: combine all tokens into one column
-            let tokens_str = format!("{}↑ {}↓ {}◆",
+            let tokens_str = format!(
+                "{}↑ {}↓ {}◆",
                 format_tokens_compact(usage.input_tokens),
                 format_tokens_compact(usage.output_tokens),
                 format_tokens_compact(cache_tokens)
@@ -155,7 +160,8 @@ pub fn output_daily_table(data: &[DailyUsage], force_compact: bool) -> Result<()
     let total_all = total_input + total_output + total_cache;
 
     if compact_mode {
-        let tokens_str = format!("{}↑ {}↓ {}◆",
+        let tokens_str = format!(
+            "{}↑ {}↓ {}◆",
             format_tokens_compact(total_input),
             format_tokens_compact(total_output),
             format_tokens_compact(total_cache)
@@ -193,7 +199,8 @@ pub fn output_monthly_table(data: &[MonthlyUsage], force_compact: bool) -> Resul
     if compact_mode {
         table.load_preset(UTF8_BORDERS_ONLY);
     } else {
-        table.load_preset(UTF8_FULL)
+        table
+            .load_preset(UTF8_FULL)
             .apply_modifier(UTF8_ROUND_CORNERS);
     }
 
@@ -226,7 +233,8 @@ pub fn output_monthly_table(data: &[MonthlyUsage], force_compact: bool) -> Resul
         total_tokens += tokens;
 
         if compact_mode {
-            let tokens_str = format!("{}↑ {}↓",
+            let tokens_str = format!(
+                "{}↑ {}↓",
                 format_tokens_compact(usage.input_tokens),
                 format_tokens_compact(usage.output_tokens)
             );
@@ -273,17 +281,23 @@ pub fn output_monthly_table(data: &[MonthlyUsage], force_compact: bool) -> Resul
 /// Output weekly usage as table
 pub fn output_weekly_table(data: &[WeeklyUsage], force_compact: bool) -> Result<()> {
     // Similar to monthly but with week formatting
-    output_monthly_table(&data.iter().map(|w| MonthlyUsage {
-        date: MonthlyDate::from_datetime(chrono::Utc::now()),  // Placeholder
-        input_tokens: w.input_tokens,
-        output_tokens: w.output_tokens,
-        cache_creation_tokens: w.cache_creation_tokens,
-        cache_read_tokens: w.cache_read_tokens,
-        total_cost: w.total_cost,
-        models_used: w.models_used.clone(),
-        model_breakdowns: w.model_breakdowns.clone(),
-        project: w.project.clone(),
-    }).collect::<Vec<_>>(), force_compact)
+    output_monthly_table(
+        &data
+            .iter()
+            .map(|w| MonthlyUsage {
+                date: MonthlyDate::from_datetime(chrono::Utc::now()), // Placeholder
+                input_tokens: w.input_tokens,
+                output_tokens: w.output_tokens,
+                cache_creation_tokens: w.cache_creation_tokens,
+                cache_read_tokens: w.cache_read_tokens,
+                total_cost: w.total_cost,
+                models_used: w.models_used.clone(),
+                model_breakdowns: w.model_breakdowns.clone(),
+                project: w.project.clone(),
+            })
+            .collect::<Vec<_>>(),
+        force_compact,
+    )
 }
 
 /// Output session usage as table
@@ -296,7 +310,8 @@ pub fn output_session_table(data: &[SessionUsage], force_compact: bool) -> Resul
     if compact_mode {
         table.load_preset(UTF8_BORDERS_ONLY);
     } else {
-        table.load_preset(UTF8_FULL)
+        table
+            .load_preset(UTF8_FULL)
             .apply_modifier(UTF8_ROUND_CORNERS);
     }
 
@@ -380,7 +395,11 @@ pub fn output_session_table(data: &[SessionUsage], force_compact: bool) -> Resul
 }
 
 /// Output blocks usage as table
-pub fn output_blocks_table(data: &[SessionBlock], token_limit: Option<u64>, force_compact: bool) -> Result<()> {
+pub fn output_blocks_table(
+    data: &[SessionBlock],
+    token_limit: Option<u64>,
+    force_compact: bool,
+) -> Result<()> {
     let width = get_terminal_width();
     let compact_mode = force_compact || width < 100;
 
@@ -389,7 +408,8 @@ pub fn output_blocks_table(data: &[SessionBlock], token_limit: Option<u64>, forc
     if compact_mode {
         table.load_preset(UTF8_BORDERS_ONLY);
     } else {
-        table.load_preset(UTF8_FULL)
+        table
+            .load_preset(UTF8_FULL)
             .apply_modifier(UTF8_ROUND_CORNERS);
     }
 
@@ -417,7 +437,8 @@ pub fn output_blocks_table(data: &[SessionBlock], token_limit: Option<u64>, forc
             "○ Complete".dimmed().to_string()
         };
 
-        let period = format!("{} - {}",
+        let period = format!(
+            "{} - {}",
             block.start_time.format("%m/%d %H:%M"),
             block.end_time.format("%m/%d %H:%M")
         );
