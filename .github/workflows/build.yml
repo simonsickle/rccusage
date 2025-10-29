@@ -114,7 +114,7 @@ jobs:
 
       - name: Upload artifacts (Unix)
         if: runner.os != 'Windows'
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.platform.artifact_name }}
           path: |
@@ -124,7 +124,7 @@ jobs:
 
       - name: Upload artifacts (Windows)
         if: runner.os == 'Windows'
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.platform.artifact_name }}
           path: |
@@ -134,7 +134,7 @@ jobs:
 
       # Also upload raw binary for convenience
       - name: Upload raw binary
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.platform.artifact_name }}-raw
           path: target/${{ matrix.platform.target }}/release/${{ matrix.platform.binary_name }}
@@ -172,7 +172,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Download all artifacts
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           path: ./artifacts
 
