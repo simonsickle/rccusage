@@ -45,7 +45,7 @@ futures = "0.3"
 # Utilities
 regex = "1.11"
 lazy_static = "1.5"
-indexmap = { version = "2.7", features = ["serde"] }
+indexmap = { version = "2.12", features = ["serde"] }
 itertools = "0.14"
 rust_decimal = "1.36"
 rust_decimal_macros = "1.36"
