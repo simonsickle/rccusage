@@ -45,7 +45,7 @@ futures = "0.3"
 # Utilities
 regex = "1.11"
 lazy_static = "1.5"
-indexmap = { version = "2.7", features = ["serde"] }
+indexmap = { version = "2.13", features = ["serde"] }
 itertools = "0.14"
 rust_decimal = "1.36"
 rust_decimal_macros = "1.36"
@@ -57,7 +57,7 @@ log = "0.4"
 env_logger = "0.11"
 
 # HTTP client for pricing data
-reqwest = { version = "0.12", features = ["json"], optional = true }
+reqwest = { version = "0.13", features = ["json"], optional = true }
 
 # File watching for live monitoring
 notify = "8.2"
