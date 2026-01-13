@@ -39,7 +39,7 @@ dirs = "6.0"
 walkdir = "2.5"
 
 # Async runtime
-tokio = { version = "1.42", features = ["full"] }
+tokio = { version = "1.49", features = ["full"] }
 futures = "0.3"
 
 # Utilities
