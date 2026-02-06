@@ -7,25 +7,57 @@ use std::collections::HashMap;
 use std::sync::Arc;
 use tracing::{debug, warn};
 
+/// Per-token-type rates (per 1M tokens)
+#[derive(Debug, Clone)]
+pub struct Rates {
+    pub input: Decimal,
+    pub output: Decimal,
+    pub cache_creation: Decimal,
+    pub cache_read: Decimal,
+}
+
+/// Extended context pricing that kicks in above a token threshold
+#[derive(Debug, Clone)]
+pub struct ExtendedContextPricing {
+    pub threshold: u64,
+    pub rates: Rates,
+}
+
 /// Model pricing information
 #[derive(Debug, Clone)]
 pub struct ModelPricing {
-    pub input_price: Decimal,          // Price per 1M input tokens
-    pub output_price: Decimal,         // Price per 1M output tokens
-    pub cache_creation_price: Decimal, // Price per 1M cache creation tokens
-    pub cache_read_price: Decimal,     // Price per 1M cache read tokens
+    pub base: Rates,
+    pub extended: Option<ExtendedContextPricing>,
 }
 
 impl ModelPricing {
     pub fn calculate_cost(&self, tokens: &TokenCounts) -> Decimal {
         let million = dec!(1_000_000);
 
-        let input_cost = (Decimal::from(tokens.input_tokens) / million) * self.input_price;
-        let output_cost = (Decimal::from(tokens.output_tokens) / million) * self.output_price;
-        let cache_creation_cost = (Decimal::from(tokens.cache_creation_input_tokens) / million)
-            * self.cache_creation_price;
+        // Per Anthropic docs: if total input tokens (including cache) exceed the
+        // threshold, ALL tokens in the request are charged at extended rates.
+        // Output token count does not affect tier selection, but output is also
+        // charged at the extended rate when the threshold is exceeded.
+        let rates = match &self.extended {
+            Some(ext) => {
+                let total_input = tokens.input_tokens
+                    + tokens.cache_creation_input_tokens
+                    + tokens.cache_read_input_tokens;
+                if total_input > ext.threshold {
+                    &ext.rates
+                } else {
+                    &self.base
+                }
+            }
+            None => &self.base,
+        };
+
+        let input_cost = (Decimal::from(tokens.input_tokens) / million) * rates.input;
+        let output_cost = (Decimal::from(tokens.output_tokens) / million) * rates.output;
+        let cache_creation_cost =
+            (Decimal::from(tokens.cache_creation_input_tokens) / million) * rates.cache_creation;
         let cache_read_cost =
-            (Decimal::from(tokens.cache_read_input_tokens) / million) * self.cache_read_price;
+            (Decimal::from(tokens.cache_read_input_tokens) / million) * rates.cache_read;
 
         input_cost + output_cost + cache_creation_cost + cache_read_cost
     }
@@ -37,89 +69,201 @@ lazy_static! {
     static ref MODEL_PRICING: HashMap<&'static str, ModelPricing> = {
         let mut m = HashMap::new();
 
+        // Claude 4.6 Opus
+        m.insert("claude-opus-4-6", ModelPricing {
+            base: Rates {
+                input: dec!(5.00),
+                output: dec!(25.00),
+                cache_creation: dec!(6.25),
+                cache_read: dec!(0.50),
+            },
+            extended: None,
+        });
+
+        // Claude 4.6 Opus 1M context — first 200k at base, remainder at extended
+        m.insert("claude-opus-4-6[1m]", ModelPricing {
+            base: Rates {
+                input: dec!(5.00),
+                output: dec!(25.00),
+                cache_creation: dec!(6.25),
+                cache_read: dec!(0.50),
+            },
+            extended: Some(ExtendedContextPricing {
+                threshold: 200_000,
+                rates: Rates {
+                    input: dec!(10.00),
+                    output: dec!(37.50),
+                    cache_creation: dec!(12.50),
+                    cache_read: dec!(1.00),
+                },
+            }),
+        });
+
+        // Claude 4.5 Opus
+        m.insert("claude-opus-4-5-20251101", ModelPricing {
+            base: Rates {
+                input: dec!(5.00),
+                output: dec!(25.00),
+                cache_creation: dec!(6.25),
+                cache_read: dec!(0.50),
+            },
+            extended: None,
+        });
+
         // Claude 4 Opus
         m.insert("claude-opus-4-20250514", ModelPricing {
-            input_price: dec!(15.00),
-            output_price: dec!(75.00),
-            cache_creation_price: dec!(18.75),  // 1.25x input
-            cache_read_price: dec!(1.50),       // 0.1x input
+            base: Rates {
+                input: dec!(15.00),
+                output: dec!(75.00),
+                cache_creation: dec!(18.75),
+                cache_read: dec!(1.50),
+            },
+            extended: None,
         });
 
         m.insert("claude-opus-4-1-20250805", ModelPricing {
-            input_price: dec!(15.00),
-            output_price: dec!(75.00),
-            cache_creation_price: dec!(18.75),
-            cache_read_price: dec!(1.50),
+            base: Rates {
+                input: dec!(15.00),
+                output: dec!(75.00),
+                cache_creation: dec!(18.75),
+                cache_read: dec!(1.50),
+            },
+            extended: None,
         });
 
-        // Claude 4.5 Sonnet (new)
+        // Claude 4.5 Sonnet
         m.insert("claude-sonnet-4-5-20250929", ModelPricing {
-            input_price: dec!(3.00),
-            output_price: dec!(15.00),
-            cache_creation_price: dec!(3.75),   // 1.25x input
-            cache_read_price: dec!(0.30),       // 0.1x input
+            base: Rates {
+                input: dec!(3.00),
+                output: dec!(15.00),
+                cache_creation: dec!(3.75),
+                cache_read: dec!(0.30),
+            },
+            extended: None,
+        });
+
+        // Claude 4.5 Sonnet 1M context
+        m.insert("claude-sonnet-4-5-20250929[1m]", ModelPricing {
+            base: Rates {
+                input: dec!(3.00),
+                output: dec!(15.00),
+                cache_creation: dec!(3.75),
+                cache_read: dec!(0.30),
+            },
+            extended: Some(ExtendedContextPricing {
+                threshold: 200_000,
+                rates: Rates {
+                    input: dec!(6.00),
+                    output: dec!(22.50),
+                    cache_creation: dec!(7.50),
+                    cache_read: dec!(0.60),
+                },
+            }),
         });
 
         // Claude 4 Sonnet
         m.insert("claude-sonnet-4-20250514", ModelPricing {
-            input_price: dec!(3.00),
-            output_price: dec!(15.00),
-            cache_creation_price: dec!(3.75),   // 1.25x input
-            cache_read_price: dec!(0.30),       // 0.1x input
+            base: Rates {
+                input: dec!(3.00),
+                output: dec!(15.00),
+                cache_creation: dec!(3.75),
+                cache_read: dec!(0.30),
+            },
+            extended: None,
+        });
+
+        // Claude 4 Sonnet 1M context
+        m.insert("claude-sonnet-4-20250514[1m]", ModelPricing {
+            base: Rates {
+                input: dec!(3.00),
+                output: dec!(15.00),
+                cache_creation: dec!(3.75),
+                cache_read: dec!(0.30),
+            },
+            extended: Some(ExtendedContextPricing {
+                threshold: 200_000,
+                rates: Rates {
+                    input: dec!(6.00),
+                    output: dec!(22.50),
+                    cache_creation: dec!(7.50),
+                    cache_read: dec!(0.60),
+                },
+            }),
         });
 
         m.insert("claude-sonnet-4-1-20250805", ModelPricing {
-            input_price: dec!(3.00),
-            output_price: dec!(15.00),
-            cache_creation_price: dec!(3.75),
-            cache_read_price: dec!(0.30),
+            base: Rates {
+                input: dec!(3.00),
+                output: dec!(15.00),
+                cache_creation: dec!(3.75),
+                cache_read: dec!(0.30),
+            },
+            extended: None,
         });
 
         // Claude 3.5 Sonnet (legacy)
         m.insert("claude-3-5-sonnet-20241022", ModelPricing {
-            input_price: dec!(3.00),
-            output_price: dec!(15.00),
-            cache_creation_price: dec!(3.75),
-            cache_read_price: dec!(0.30),
+            base: Rates {
+                input: dec!(3.00),
+                output: dec!(15.00),
+                cache_creation: dec!(3.75),
+                cache_read: dec!(0.30),
+            },
+            extended: None,
         });
 
         m.insert("claude-3-5-sonnet-20240620", ModelPricing {
-            input_price: dec!(3.00),
-            output_price: dec!(15.00),
-            cache_creation_price: dec!(3.75),
-            cache_read_price: dec!(0.30),
+            base: Rates {
+                input: dec!(3.00),
+                output: dec!(15.00),
+                cache_creation: dec!(3.75),
+                cache_read: dec!(0.30),
+            },
+            extended: None,
         });
 
         // Claude 3 Opus (legacy)
         m.insert("claude-3-opus-20240229", ModelPricing {
-            input_price: dec!(15.00),
-            output_price: dec!(75.00),
-            cache_creation_price: dec!(18.75),
-            cache_read_price: dec!(1.50),
+            base: Rates {
+                input: dec!(15.00),
+                output: dec!(75.00),
+                cache_creation: dec!(18.75),
+                cache_read: dec!(1.50),
+            },
+            extended: None,
         });
 
-        // Claude 4.5 Haiku (new)
+        // Claude 4.5 Haiku
         m.insert("claude-haiku-4-5-20251001", ModelPricing {
-            input_price: dec!(1.00),
-            output_price: dec!(5.00),
-            cache_creation_price: dec!(1.25),
-            cache_read_price: dec!(0.10),
+            base: Rates {
+                input: dec!(1.00),
+                output: dec!(5.00),
+                cache_creation: dec!(1.25),
+                cache_read: dec!(0.10),
+            },
+            extended: None,
         });
 
         // Claude 3.5 Haiku
         m.insert("claude-3-5-haiku-20241022", ModelPricing {
-            input_price: dec!(1.00),
-            output_price: dec!(5.00),
-            cache_creation_price: dec!(1.25),
-            cache_read_price: dec!(0.10),
+            base: Rates {
+                input: dec!(0.80),
+                output: dec!(4.00),
+                cache_creation: dec!(1.00),
+                cache_read: dec!(0.08),
+            },
+            extended: None,
         });
 
         // Claude 3 Haiku
         m.insert("claude-3-haiku-20240307", ModelPricing {
-            input_price: dec!(0.25),
-            output_price: dec!(1.25),
-            cache_creation_price: dec!(0.30),
-            cache_read_price: dec!(0.03),
+            base: Rates {
+                input: dec!(0.25),
+                output: dec!(1.25),
+                cache_creation: dec!(0.30),
+                cache_read: dec!(0.03),
+            },
+            extended: None,
         });
 
         m
@@ -171,7 +315,14 @@ impl PricingFetcher {
 
             // Check for Opus models
             if model_lower.contains("opus") {
-                if model_lower.contains("4-1") || model_lower.contains("4.1") {
+                if model_lower.contains("4-6") || model_lower.contains("4.6") {
+                    if model_lower.contains("[1m]") {
+                        return Some("claude-opus-4-6[1m]");
+                    }
+                    return Some("claude-opus-4-6");
+                } else if model_lower.contains("4-5") || model_lower.contains("4.5") {
+                    return Some("claude-opus-4-5-20251101");
+                } else if model_lower.contains("4-1") || model_lower.contains("4.1") {
                     return Some("claude-opus-4-1-20250805");
                 } else if model_lower.contains("4") {
                     return Some("claude-opus-4-20250514");
@@ -183,10 +334,16 @@ impl PricingFetcher {
             // Check for Sonnet models
             if model_lower.contains("sonnet") {
                 if model_lower.contains("4-5") || model_lower.contains("4.5") {
+                    if model_lower.contains("[1m]") {
+                        return Some("claude-sonnet-4-5-20250929[1m]");
+                    }
                     return Some("claude-sonnet-4-5-20250929");
                 } else if model_lower.contains("4-1") || model_lower.contains("4.1") {
                     return Some("claude-sonnet-4-1-20250805");
                 } else if model_lower.contains("4") {
+                    if model_lower.contains("[1m]") {
+                        return Some("claude-sonnet-4-20250514[1m]");
+                    }
                     return Some("claude-sonnet-4-20250514");
                 } else if model_lower.contains("3-5") || model_lower.contains("3.5") {
                     return Some("claude-3-5-sonnet-20241022");

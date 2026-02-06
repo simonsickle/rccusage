@@ -54,7 +54,10 @@ pub async fn find_jsonl_files() -> Result<Vec<PathBuf>> {
 
     for dir in dirs {
         let pattern = format!("{}/**/*.jsonl", dir.display());
-        for path in glob(&pattern).context("Failed to read glob pattern")?.flatten() {
+        for path in glob(&pattern)
+            .context("Failed to read glob pattern")?
+            .flatten()
+        {
             all_files.push(path);
         }
     }
@@ -200,6 +203,11 @@ pub async fn load_usage_entries(
             if let Ok(data) = serde_json::from_str::<UsageData>(line) {
                 // Skip API error messages
                 if data.is_api_error_message.unwrap_or(false) {
+                    return Ok(());
+                }
+
+                // Skip synthetic/internal entries (zero-token bookkeeping records)
+                if data.message.model.as_deref() == Some("<synthetic>") {
                     return Ok(());
                 }
 

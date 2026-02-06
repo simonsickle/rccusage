@@ -2,19 +2,20 @@ use log::LevelFilter;
 use std::env;
 use tracing_subscriber::{EnvFilter, FmtSubscriber};
 
-/// Initialize logging based on LOG_LEVEL environment variable
-/// LOG_LEVEL values:
-/// - 0 = silent
-/// - 1 = warn
-/// - 2 = info
-/// - 3 = debug
-/// - 4 = trace
+/// Initialize logging based on VERBOSE environment variable
+/// Silent by default. Set VERBOSE=true for info-level logs,
+/// or use LOG_LEVEL=0..4 for fine-grained control.
 pub fn init_logger() {
-    // Check LOG_LEVEL environment variable
-    let log_level = env::var("LOG_LEVEL")
+    let log_level = if let Some(level) = env::var("LOG_LEVEL")
         .ok()
         .and_then(|s| s.parse::<u8>().ok())
-        .unwrap_or(2); // Default to info level
+    {
+        level
+    } else if env::var("VERBOSE").is_ok_and(|v| v == "true" || v == "1") {
+        2 // info
+    } else {
+        0 // silent by default
+    };
 
     let level_filter = match log_level {
         0 => LevelFilter::Off,

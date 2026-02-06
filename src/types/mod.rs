@@ -134,9 +134,10 @@ impl std::fmt::Display for WeeklyDate {
 }
 
 /// Cost calculation mode
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, clap::ValueEnum)]
+#[derive(Debug, Default, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, clap::ValueEnum)]
 pub enum CostMode {
     /// Use pre-calculated costUSD when available, otherwise calculate from tokens
+    #[default]
     Auto,
     /// Always calculate costs from token counts using model pricing
     Calculate,
@@ -144,23 +145,12 @@ pub enum CostMode {
     Display,
 }
 
-impl Default for CostMode {
-    fn default() -> Self {
-        Self::Auto
-    }
-}
-
 /// Sort order for results
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, clap::ValueEnum)]
+#[derive(Debug, Default, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, clap::ValueEnum)]
 pub enum SortOrder {
+    #[default]
     Asc,
     Desc,
-}
-
-impl Default for SortOrder {
-    fn default() -> Self {
-        Self::Asc
-    }
 }
 
 /// Common options for all commands

@@ -1,95 +1,118 @@
-use crate::aggregation::identify_session_blocks;
 use crate::commands::StatuslineArgs;
-use crate::data_loader::load_usage_entries;
-use crate::output::output_json;
-use crate::pricing::PricingFetcher;
 use anyhow::Result;
-use rust_decimal::prelude::*;
-use serde_json::json;
-use tracing::info;
+use serde::Deserialize;
+use std::io::{self, Read};
+
+const MAX_INPUT_SIZE: u64 = 1024 * 1024; // 1MB
+
+#[derive(Deserialize)]
+struct StatusInput {
+    model: Option<ModelInfo>,
+    context_window: Option<ContextWindow>,
+    cost: Option<CostInfo>,
+}
+
+#[derive(Deserialize)]
+struct ModelInfo {
+    display_name: Option<String>,
+}
+
+#[derive(Deserialize)]
+struct ContextWindow {
+    used_percentage: Option<f64>,
+}
+
+#[derive(Deserialize)]
+struct CostInfo {
+    total_cost_usd: Option<f64>,
+    total_duration_ms: Option<u64>,
+    total_lines_added: Option<u64>,
+    total_lines_removed: Option<u64>,
+}
 
 pub async fn run(args: StatuslineArgs) -> Result<()> {
-    let options = args.common.to_common_options();
-    let pricing_fetcher = PricingFetcher::new(options.offline);
+    let mut input = String::new();
+    io::stdin()
+        .take(MAX_INPUT_SIZE)
+        .read_to_string(&mut input)?;
 
-    info!("Loading usage data...");
-    let entries = load_usage_entries(&options, &pricing_fetcher).await?;
+    let data: StatusInput = serde_json::from_str(&input).unwrap_or(StatusInput {
+        model: None,
+        context_window: None,
+        cost: None,
+    });
 
-    // Find active block
-    let blocks = identify_session_blocks(entries, None);
-    let active_block = blocks.iter().find(|b| b.is_active);
+    let model = data
+        .model
+        .as_ref()
+        .and_then(|m| m.display_name.as_deref())
+        .unwrap_or("?");
 
-    if options.json {
-        let status = if let Some(block) = active_block {
-            json!({
-                "active": true,
-                "tokens": block.total_tokens(),
-                "cost": block.cost_usd.to_f64().unwrap_or(0.0),
-                "models": block.models,
-                "start_time": block.start_time.to_rfc3339(),
-                "end_time": block.end_time.to_rfc3339(),
-            })
-        } else {
-            json!({
-                "active": false,
-                "tokens": 0,
-                "cost": 0.0,
-                "models": [],
-            })
-        };
+    let cost = data
+        .cost
+        .as_ref()
+        .and_then(|c| c.total_cost_usd)
+        .unwrap_or(0.0);
 
-        output_json(&status, args.common.jq.as_deref())?;
-    } else {
-        // Compact text output for shell prompts
-        if let Some(block) = active_block {
-            let tokens = block.total_tokens();
-            let cost = block.cost_usd;
+    let ctx_pct = data
+        .context_window
+        .as_ref()
+        .and_then(|c| c.used_percentage)
+        .unwrap_or(0.0) as u64;
 
-            match args.format.as_str() {
-                "compact" => {
-                    // Compact format: "1.2K tokens | $0.05"
-                    let tokens_str = format_token_count(tokens);
-                    let cost_str = format_cost_compact(cost);
-                    print!("{} | {}", tokens_str, cost_str);
-                }
-                "minimal" => {
-                    // Minimal format: just cost
-                    print!("{}", format_cost_compact(cost));
-                }
-                "tokens" => {
-                    // Just token count
-                    print!("{}", format_token_count(tokens));
-                }
-                _ => {
-                    // Default to compact
-                    let tokens_str = format_token_count(tokens);
-                    let cost_str = format_cost_compact(cost);
-                    print!("{} | {}", tokens_str, cost_str);
-                }
-            }
-        } else {
-            // No active block
-            match args.format.as_str() {
-                "minimal" => print!("$0.00"),
-                "tokens" => print!("0"),
-                _ => print!("No active session"),
-            }
+    let lines_added = data
+        .cost
+        .as_ref()
+        .and_then(|c| c.total_lines_added)
+        .unwrap_or(0);
+
+    let lines_removed = data
+        .cost
+        .as_ref()
+        .and_then(|c| c.total_lines_removed)
+        .unwrap_or(0);
+
+    let duration_ms = data
+        .cost
+        .as_ref()
+        .and_then(|c| c.total_duration_ms)
+        .unwrap_or(0);
+
+    let duration_str = format_duration(duration_ms);
+    let ctx_bar = context_bar(ctx_pct);
+
+    match args.format.as_str() {
+        "minimal" => {
+            print!("${:.2}", cost);
+        }
+        _ => {
+            print!(
+                "[{}] ${:.2} | {}{}% | +{}/−{} | {}",
+                model, cost, ctx_bar, ctx_pct, lines_added, lines_removed, duration_str
+            );
         }
     }
 
     Ok(())
 }
 
-fn format_token_count(tokens: u64) -> String {
-    if tokens >= 1_000_000 {
-        format!("{:.1}M tokens", tokens as f64 / 1_000_000.0)
-    } else if tokens >= 1_000 {
-        format!("{:.1}K tokens", tokens as f64 / 1_000.0)
-    } else {
-        format!("{} tokens", tokens)
+fn context_bar(pct: u64) -> &'static str {
+    match pct {
+        0..=25 => "░░░░ ",
+        26..=50 => "▓░░░ ",
+        51..=75 => "▓▓░░ ",
+        76..=90 => "▓▓▓░ ",
+        _ => "▓▓▓▓ ",
     }
 }
 
-fn format_cost_compact(cost: Decimal) -> String {
-    format!("${:.2}", cost)
+fn format_duration(ms: u64) -> String {
+    let secs = ms / 1000;
+    if secs < 60 {
+        format!("{}s", secs)
+    } else {
+        let mins = secs / 60;
+        let remaining_secs = secs % 60;
+        format!("{}m{}s", mins, remaining_secs)
+    }
 }

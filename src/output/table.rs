@@ -17,13 +17,7 @@ fn get_terminal_width() -> usize {
 
 /// Format cost as currency
 fn format_cost(cost: Decimal) -> String {
-    if cost >= Decimal::from(1000) {
-        format!("${:.0}", cost)
-    } else if cost >= Decimal::from(100) {
-        format!("${:.1}", cost)
-    } else {
-        format!("${:.2}", cost)
-    }
+    format!("${:.2}", cost)
 }
 
 /// Format tokens with K/M/B suffix
