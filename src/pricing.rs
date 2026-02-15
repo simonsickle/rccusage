@@ -80,6 +80,36 @@ lazy_static! {
             extended: None,
         });
 
+        // Claude 4.6 Opus Fast Mode (6x standard rates)
+        m.insert("claude-opus-4-6:fast", ModelPricing {
+            base: Rates {
+                input: dec!(30.00),
+                output: dec!(150.00),
+                cache_creation: dec!(37.50),
+                cache_read: dec!(3.00),
+            },
+            extended: None,
+        });
+
+        // Claude 4.6 Opus Fast Mode 1M context
+        m.insert("claude-opus-4-6:fast[1m]", ModelPricing {
+            base: Rates {
+                input: dec!(30.00),
+                output: dec!(150.00),
+                cache_creation: dec!(37.50),
+                cache_read: dec!(3.00),
+            },
+            extended: Some(ExtendedContextPricing {
+                threshold: 200_000,
+                rates: Rates {
+                    input: dec!(60.00),
+                    output: dec!(225.00),
+                    cache_creation: dec!(75.00),
+                    cache_read: dec!(6.00),
+                },
+            }),
+        });
+
         // Claude 4.6 Opus 1M context — first 200k at base, remainder at extended
         m.insert("claude-opus-4-6[1m]", ModelPricing {
             base: Rates {
@@ -306,6 +336,9 @@ impl PricingFetcher {
         // Try fuzzy matching for known patterns
         let model_lower = model_name.to_lowercase();
 
+        // Check for fast mode suffix (:fast)
+        let is_fast = model_lower.contains(":fast");
+
         // Extract model family and version
         let parts: Vec<&str> = model_lower.split('-').collect();
 
@@ -317,9 +350,17 @@ impl PricingFetcher {
             if model_lower.contains("opus") {
                 if model_lower.contains("4-6") || model_lower.contains("4.6") {
                     if model_lower.contains("[1m]") {
-                        return Some("claude-opus-4-6[1m]");
+                        return if is_fast {
+                            Some("claude-opus-4-6:fast[1m]")
+                        } else {
+                            Some("claude-opus-4-6[1m]")
+                        };
                     }
-                    return Some("claude-opus-4-6");
+                    return if is_fast {
+                        Some("claude-opus-4-6:fast")
+                    } else {
+                        Some("claude-opus-4-6")
+                    };
                 } else if model_lower.contains("4-5") || model_lower.contains("4.5") {
                     return Some("claude-opus-4-5-20251101");
                 } else if model_lower.contains("4-1") || model_lower.contains("4.1") {

@@ -126,14 +126,19 @@ pub async fn parse_usage_entry(
         .context("Failed to parse timestamp")?
         .with_timezone(&Utc);
 
-    // Get model name
-    let model = ModelName::new(
-        data.message
-            .model
-            .as_ref()
-            .cloned()
-            .unwrap_or_else(|| "unknown".to_string()),
-    );
+    // Get model name, appending :fast suffix if this was a fast mode request
+    let mut model_str = data
+        .message
+        .model
+        .as_ref()
+        .cloned()
+        .unwrap_or_else(|| "unknown".to_string());
+
+    if data.message.usage.speed.as_deref() == Some("fast") {
+        model_str.push_str(":fast");
+    }
+
+    let model = ModelName::new(model_str);
 
     // Calculate cost based on mode
     let cost = match cost_mode {

@@ -11,6 +11,9 @@ pub struct TokenCounts {
     pub cache_creation_input_tokens: u64,
     #[serde(default)]
     pub cache_read_input_tokens: u64,
+    /// Speed mode from API response ("fast" or "standard")
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub speed: Option<String>,
 }
 
 impl TokenCounts {

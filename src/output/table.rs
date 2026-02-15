@@ -37,6 +37,10 @@ fn format_tokens_compact(tokens: u64) -> String {
 
 /// Abbreviate model name for compact display
 fn abbreviate_model_name(name: &str) -> String {
+    // Detect and strip fast mode suffix
+    let is_fast = name.contains(":fast");
+    let name = name.replace(":fast", "");
+
     // Common patterns to abbreviate
     let name = name
         .replace("claude-", "")
@@ -47,14 +51,21 @@ fn abbreviate_model_name(name: &str) -> String {
         .replace("-4-1", "-4.1");
 
     // Further abbreviations
-    match name.as_str() {
+    let abbrev = match name.as_str() {
         s if s.contains("sonnet-4.5") => "S4.5".to_string(),
         s if s.contains("haiku-4.5") => "H4.5".to_string(),
+        s if s.contains("opus-4-6") || s.contains("opus-4.6") => "O4.6".to_string(),
         s if s.contains("opus-4.1") => "O4.1".to_string(),
         s if s.contains("sonnet") => "Sonnet".to_string(),
         s if s.contains("haiku") => "Haiku".to_string(),
         s if s.contains("opus") => "Opus".to_string(),
         _ => name.to_string(),
+    };
+
+    if is_fast {
+        format!("{}↯", abbrev)
+    } else {
+        abbrev
     }
 }
 
