@@ -20,16 +20,16 @@ jobs:
       fail-fast: false
       matrix:
         platform:
-          # macOS Intel
+          # macOS Intel (cross-compiled from ARM runner)
           - name: macOS-x64
-            os: macos-13
+            os: macos-latest
             target: x86_64-apple-darwin
             binary_name: rccusage
             artifact_name: rccusage-darwin-x64
 
           # macOS Apple Silicon (native ARM runner)
           - name: macOS-arm64
-            os: macos-14
+            os: macos-latest
             target: aarch64-apple-darwin
             binary_name: rccusage
             artifact_name: rccusage-darwin-arm64

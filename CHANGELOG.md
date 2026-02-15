@@ -28,11 +28,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - GitHub Actions for CI/CD and multi-platform builds
 - Automatic `latest` pre-release on every merge to `main` with downloadable binaries
 - Automated publishing to crates.io on versioned releases
-- Native ARM64 macOS builds using `macos-14` runners
+- Native ARM64 macOS builds using `macos-latest` runners
 - Dry-run verification before crates.io publishing
 
 ### Changed
-- Updated macOS build runners from deprecated `macos-12` to `macos-13` (Intel) and `macos-14` (ARM64 native)
+- Updated macOS build runners from deprecated `macos-12` to `macos-latest` (ARM64 native, with cross-compilation for Intel)
 - Updated Linux build runners from deprecated `ubuntu-20.04` to `ubuntu-latest`
 - Updated Codecov action from v3 to v5
 - Updated `actions/download-artifact` to v5 across all workflows
