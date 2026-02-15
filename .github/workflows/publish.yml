@@ -4,10 +4,15 @@ on:
   release:
     types: [published]
 
+env:
+  CARGO_TERM_COLOR: always
+
 jobs:
   publish:
     name: Publish to crates.io
     runs-on: ubuntu-latest
+    # Only publish for versioned releases, not the "latest" pre-release
+    if: startsWith(github.event.release.tag_name, 'v')
     steps:
       - name: Checkout code
         uses: actions/checkout@v5
@@ -24,13 +29,15 @@ jobs:
             target
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
 
-      - name: Check package
-        run: cargo package --verbose
-
       - name: Verify package
-        run: cargo package --list
+        run: cargo package --verbose --list
+
+      - name: Dry run publish
+        run: cargo publish --dry-run
+        env:
+          CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
 
       - name: Publish to crates.io
-        run: cargo publish --token ${{ secrets.CARGO_REGISTRY_TOKEN }}
+        run: cargo publish
         env:
           CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}

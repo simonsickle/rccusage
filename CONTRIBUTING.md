@@ -183,12 +183,38 @@ fn test_integration() {
 
 ## Release Process
 
-Releases are managed by maintainers:
+Releases are managed by maintainers using the automated release script:
 
-1. Update version in `Cargo.toml`
-2. Update CHANGELOG.md
-3. Create and push a tag: `git tag v0.1.0`
-4. GitHub Actions will build and release binaries
+### Automated Builds on Merge
+
+Every merge to `main` automatically:
+- Runs the full test suite, linting, and formatting checks
+- Builds binaries for all 6 supported platforms
+- Publishes a `latest` pre-release on GitHub with downloadable artifacts
+
+### Creating a Versioned Release
+
+1. Ensure you are on the `main` branch with a clean working directory
+2. Run the release script:
+   ```bash
+   ./scripts/release.sh patch   # Bug fixes: 0.1.0 -> 0.1.1
+   ./scripts/release.sh minor   # New features: 0.1.0 -> 0.2.0
+   ./scripts/release.sh major   # Breaking changes: 0.1.0 -> 1.0.0
+   ```
+3. The script will run tests, update `Cargo.toml`, create a commit, and tag the release
+4. Push to trigger the release pipeline:
+   ```bash
+   git push origin main --tags
+   ```
+5. GitHub Actions will automatically:
+   - Build binaries for macOS (x64, ARM64), Linux (x64, ARM64), and Windows (x64, ARM64)
+   - Create a GitHub release with all platform binaries and SHA256 checksums
+   - Publish the new version to [crates.io](https://crates.io/crates/rccusage)
+
+### Required Secrets
+
+The following repository secrets must be configured:
+- `CARGO_REGISTRY_TOKEN` - API token for publishing to crates.io
 
 ## Getting Help
 

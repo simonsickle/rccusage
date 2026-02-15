@@ -22,28 +22,28 @@ jobs:
         platform:
           # macOS Intel
           - name: macOS-x64
-            os: macos-12
+            os: macos-13
             target: x86_64-apple-darwin
             binary_name: rccusage
             artifact_name: rccusage-darwin-x64
 
-          # macOS Apple Silicon
+          # macOS Apple Silicon (native ARM runner)
           - name: macOS-arm64
-            os: macos-12
+            os: macos-14
             target: aarch64-apple-darwin
             binary_name: rccusage
             artifact_name: rccusage-darwin-arm64
 
           # Linux x64 (GNU)
           - name: Linux-x64-gnu
-            os: ubuntu-20.04
+            os: ubuntu-latest
             target: x86_64-unknown-linux-gnu
             binary_name: rccusage
             artifact_name: rccusage-linux-x64
 
           # Linux ARM64
           - name: Linux-arm64
-            os: ubuntu-20.04
+            os: ubuntu-latest
             target: aarch64-unknown-linux-gnu
             binary_name: rccusage
             artifact_name: rccusage-linux-arm64
@@ -53,14 +53,14 @@ jobs:
             os: windows-latest
             target: x86_64-pc-windows-msvc
             binary_name: rccusage.exe
-            artifact_name: rccusage-windows-x64.exe
+            artifact_name: rccusage-windows-x64
 
           # Windows ARM64
           - name: Windows-arm64
             os: windows-latest
             target: aarch64-pc-windows-msvc
             binary_name: rccusage.exe
-            artifact_name: rccusage-windows-arm64.exe
+            artifact_name: rccusage-windows-arm64
 
     steps:
       - name: Checkout code
@@ -159,6 +159,78 @@ jobs:
       - name: Check formatting
         run: cargo fmt -- --check
 
+  # Create a "latest" pre-release on every push to main
+  latest-release:
+    name: Update Latest Release
+    needs: [build, test]
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v5
+        with:
+          path: ./artifacts
+
+      - name: Display structure of downloaded files
+        run: ls -R ./artifacts
+
+      - name: Prepare release assets
+        run: |
+          mkdir -p ./release
+          # Copy all tar.gz and zip files (skip raw binary dirs)
+          find ./artifacts -name "*.tar.gz" -exec cp {} ./release/ \;
+          find ./artifacts -name "*.zip" -exec cp {} ./release/ \;
+          find ./artifacts -name "*.sha256" -exec cp {} ./release/ \;
+          ls -la ./release/
+
+      - name: Delete existing latest release
+        run: gh release delete latest --yes --cleanup-tag || true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Create latest pre-release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: latest
+          name: "Latest Build (unstable)"
+          files: ./release/*
+          draft: false
+          prerelease: true
+          make_latest: false
+          body: |
+            ## Latest Build from `main`
+
+            This is an automatically generated pre-release from the latest commit on `main`.
+            These binaries are built on every merge to `main` and may be unstable.
+
+            **Commit:** ${{ github.sha }}
+            **Date:** ${{ github.event.head_commit.timestamp }}
+
+            For stable releases, see the [latest versioned release](https://github.com/${{ github.repository }}/releases/latest).
+
+            ### Download
+
+            | Platform | Architecture | File |
+            |----------|-------------|------|
+            | macOS | Intel (x64) | `rccusage-darwin-x64.tar.gz` |
+            | macOS | Apple Silicon (ARM64) | `rccusage-darwin-arm64.tar.gz` |
+            | Linux | x64 | `rccusage-linux-x64.tar.gz` |
+            | Linux | ARM64 | `rccusage-linux-arm64.tar.gz` |
+            | Windows | x64 | `rccusage-windows-x64.zip` |
+            | Windows | ARM64 | `rccusage-windows-arm64.zip` |
+
+            ### Checksums
+            SHA256 checksums are provided for all binaries.
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # Create a versioned release on tag push
   release:
     name: Create Release
     needs: [build, test]
@@ -172,7 +244,7 @@ jobs:
         uses: actions/checkout@v5
 
       - name: Download all artifacts
-        uses: actions/download-artifact@v6
+        uses: actions/download-artifact@v5
         with:
           path: ./artifacts
 
@@ -197,6 +269,11 @@ jobs:
           generate_release_notes: true
           body: |
             ## Installation
+
+            ### Cargo (crates.io)
+            ```bash
+            cargo install rccusage
+            ```
 
             ### macOS
             ```bash
