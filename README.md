@@ -316,9 +316,44 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - [ ] Add MCP (Model Context Protocol) server support
 - [ ] Implement accurate session message counting
 - [ ] Add export functionality (CSV, Excel)
-- [ ] Create pre-built binaries for major platforms
+- [x] Create pre-built binaries for major platforms
 - [ ] Add usage graphs and visualizations
 - [ ] Implement caching for faster repeated queries
+
+## 🔄 CI/CD Pipeline
+
+This project uses GitHub Actions for continuous integration and deployment.
+
+### Workflows
+
+| Workflow | Trigger | Purpose |
+|----------|---------|---------|
+| **CI** (`ci.yml`) | Push/PR to `main` | Tests, linting, coverage, MSRV check |
+| **Build and Release** (`build.yml`) | Push/PR to `main`, tags `v*` | Multi-platform builds and releases |
+| **Publish** (`publish.yml`) | GitHub release published | Publish to crates.io |
+
+### How Releases Work
+
+1. **Every merge to `main`** triggers a build across all 6 platforms (macOS x64/ARM64, Linux x64/ARM64, Windows x64/ARM64) and publishes a `latest` pre-release with downloadable binaries.
+
+2. **Tagged releases** (e.g., `v0.2.0`) create a versioned GitHub release with binaries and automatically publish to [crates.io](https://crates.io/crates/rccusage).
+
+### Creating a Release
+
+```bash
+# Use the release script to bump version and create a tag
+./scripts/release.sh patch   # 0.1.0 -> 0.1.1
+./scripts/release.sh minor   # 0.1.0 -> 0.2.0
+./scripts/release.sh major   # 0.1.0 -> 1.0.0
+
+# Push the commit and tag to trigger the release pipeline
+git push origin main --tags
+```
+
+The pipeline will then:
+- Build binaries for all platforms
+- Create a GitHub release with all artifacts
+- Publish the crate to crates.io
 
 ## 🛠️ Development
 
